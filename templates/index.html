@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agentic Claims Processor</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container-fluid vh-100 d-flex flex-column overflow-hidden p-0">
+        <!-- Header -->
+        <header class="navbar navbar-expand-lg border-bottom" id="main-navbar">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="#">
+                    <i class="bi bi-robot me-2 text-primary"></i>Agentic Claims Processor
+                </a>
+                <div class="d-flex align-items-center gap-3 flex-grow-1 justify-content-end">
+                    <select id="scenario-select" class="form-select" style="width: 200px;">
+                        <option value="">Select Scenario...</option>
+                    </select>
+                    <button id="run-btn" class="btn" disabled title="Run Scenario" style="background-color: #e5e7eb; border: 1px solid #d1d5db; padding: 6px 12px;">
+                        <img src="/static/icons/play.png" alt="Play" style="width: 20px; height: 20px;">
+                    </button>
+                    <button id="settings-btn" class="btn" title="Settings" data-bs-toggle="modal" data-bs-target="#settingsModal" style="background-color: #e5e7eb; border: 1px solid #d1d5db; padding: 6px 12px;">
+                        <img src="/static/icons/settings.png" alt="Settings" style="width: 20px; height: 20px;">
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <div class="row flex-grow-1 overflow-hidden">
+            <!-- Main Content: Timeline -->
+            <div class="col-md-4 d-flex flex-column p-0 border-end bg-light">
+                <div class="p-3 ps-4 border-bottom bg-white d-flex justify-content-between align-items-center">
+                    <h6 class="text-uppercase text-muted mb-0">Agent Workflow</h6>
+                    <button class="btn btn-sm btn-outline-secondary" id="clear-feed-btn" title="Clear Feed">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+                <div class="p-3 overflow-auto flex-grow-1 position-relative" id="timeline-scroll-container">
+                    <div class="timeline-container" id="timeline-container">
+                        <div class="timeline-line" id="timeline-line" style="display: none;"></div>
+                        <!-- Agent items will be added here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Details -->
+            <div class="col-md-8 d-flex flex-column p-0 bg-white">
+                <div class="details-panel" id="details-panel">
+                    <div class="text-center text-muted mt-5 p-4">
+                        <i class="bi bi-info-circle display-4"></i>
+                        <p class="mt-3">Select an agent or tool call to view details.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for large previews -->
+    <div class="modal fade" id="previewModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">File Preview</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0" id="modal-body-content" style="height: 80vh;">
+                    <!-- Content goes here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal fade" id="settingsModal" tabindex="-1" aria-labelledby="settingsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="settingsModalLabel"><i class="bi bi-gear-fill me-2"></i>Theme Settings</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-muted mb-3">Branding</h6>
+                            <div class="mb-3">
+                                <label for="appTitle" class="form-label">App Title</label>
+                                <input type="text" class="form-control" id="appTitle" value="Agentic Claims Processor">
+                            </div>
+                            <div class="mb-3">
+                                <label for="logoUrl" class="form-label">Logo URL (optional)</label>
+                                <input type="text" class="form-control" id="logoUrl" placeholder="https://example.com/logo.png">
+                                <small class="text-muted">Leave empty to use default icon</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-muted mb-3">Color Scheme</h6>
+                            <div class="mb-3">
+                                <label for="navbarColor" class="form-label">Navbar Background</label>
+                                <input type="color" class="form-control form-control-color" id="navbarColor" value="#1a3a52">
+                            </div>
+                            <div class="mb-3">
+                                <label for="navbarTextColor" class="form-label">Navbar Text Color</label>
+                                <input type="color" class="form-control form-control-color" id="navbarTextColor" value="#ffffff">
+                            </div>
+                            <div class="mb-3">
+                                <label for="accentColor" class="form-label">Accent Color (Headings, Borders, Active States)</label>
+                                <input type="color" class="form-control form-control-color" id="accentColor" value="#2c5f8d">
+                            </div>
+                            <div class="mb-3">
+                                <label for="backgroundColor" class="form-label">Background Color</label>
+                                <input type="color" class="form-control form-control-color" id="backgroundColor" value="#f5f7fa">
+                            </div>
+                            <div class="mb-3">
+                                <label for="textColor" class="form-label">Text Color</label>
+                                <input type="color" class="form-control form-control-color" id="textColor" value="#2d3748">
+                            </div>
+                            <div class="mb-3">
+                                <label for="timelineColor" class="form-label">Timeline Line Color</label>
+                                <input type="color" class="form-control form-control-color" id="timelineColor" value="#d1d5db">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-danger" onclick="resetToDefault()">Reset to Default</button>
+                    <div class="flex-grow-1"></div>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="applyTheme()" data-bs-dismiss="modal">Apply Theme</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"></script>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
