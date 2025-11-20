@@ -353,9 +353,30 @@ function addEndPill() {
     `;
     container.appendChild(pill);
     
+    // Update timeline to reach the end pill
+    setTimeout(() => updateTimelineHeight(), 50);
+    
     // Auto scroll to show the end pill
     const scrollContainer = document.getElementById('timeline-scroll-container');
     scrollContainer.scrollTop = scrollContainer.scrollHeight;
+}
+
+function updateTimelineHeight() {
+    const container = document.getElementById('timeline-container');
+    const timelineLine = document.getElementById('timeline-line');
+    if (!container || !timelineLine) return;
+    
+    // Find the last element with timeline-pill-dot
+    const allDots = container.querySelectorAll('.timeline-pill-dot, .agent-avatar-wrapper');
+    if (allDots.length === 0) return;
+    
+    const lastDot = allDots[allDots.length - 1];
+    const containerRect = container.getBoundingClientRect();
+    const lastDotRect = lastDot.getBoundingClientRect();
+    
+    // Calculate height to reach center of last dot
+    const newHeight = lastDotRect.top + lastDotRect.height / 2 - containerRect.top;
+    timelineLine.style.height = newHeight + 'px';
 }
 
 function createAgentCard(agentName) {
@@ -396,17 +417,8 @@ function createAgentCard(agentName) {
     
     container.appendChild(item);
     
-    // Extend timeline line to bottom of this agent
-    setTimeout(() => {
-        const timelineLine = document.getElementById('timeline-line');
-        const agentAvatar = item.querySelector('.agent-avatar-wrapper');
-        if (timelineLine && agentAvatar) {
-            const containerRect = container.getBoundingClientRect();
-            const avatarRect = agentAvatar.getBoundingClientRect();
-            const newHeight = avatarRect.top + avatarRect.height / 2 - containerRect.top;
-            timelineLine.style.height = newHeight + 'px';
-        }
-    }, 50);
+    // Extend timeline line to this agent
+    setTimeout(() => updateTimelineHeight(), 50);
     
     // Auto scroll
     const scrollContainer = document.getElementById('timeline-scroll-container');
@@ -424,6 +436,9 @@ function toggleToolsList(cardId) {
         } else {
             chevron.className = 'bi bi-chevron-down';
         }
+        
+        // Update timeline height after animation completes
+        setTimeout(() => updateTimelineHeight(), 350);
     }
 }
 
@@ -466,6 +481,11 @@ function addToolRow(cardId, toolName, args, output, toolId) {
     if (countElem) {
         const currentCount = parseInt(countElem.textContent) || 0;
         countElem.textContent = currentCount + 1;
+    }
+    
+    // Update timeline height if tools are expanded
+    if (!list.classList.contains('collapsed')) {
+        setTimeout(() => updateTimelineHeight(), 50);
     }
     
     return rowId;
