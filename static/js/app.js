@@ -7,27 +7,27 @@ const agentInfo = {
     "DocumentExtractor": {
         avatar: "document_extraction_agent.png",
         title: "Document Extractor",
-        description: "Extracts content from PDFs and images into markdown."
+        description: "Extracts content from PDFs and images."
     },
     "IDVerification": {
         avatar: "id_verification_agent.png",
         title: "ID Verification",
-        description: "Verifies policy holder identity against provided documents."
+        description: "Verifies policy holder identity."
     },
     "PolicyCoverage": {
         avatar: "policy_coverage_agent.png",
         title: "Policy Coverage",
-        description: "Checks if the claim is covered under the policy rules."
+        description: "Checks if the claim is covered under the policy."
     },
     "MedicalAssessor": {
         avatar: "medical_assessment_agent.png",
         title: "Medical Assessor",
-        description: "Reviews medical documents for validity and necessity."
+        description: "Reviews medical documents for validity."
     },
     "ClaimsDecision": {
         avatar: "claim_decision_agent.png",
         title: "Claims Decision",
-        description: "Makes the final recommendation based on all assessments."
+        description: "Makes the final recommendation."
     }
 };
 
@@ -57,9 +57,17 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('scenario-select').addEventListener('change', (e) => {
         selectScenario(e.target.value);
     });
+    
+    // Initialize clear feed button as disabled
+    updateClearFeedButton();
 });
 
 function loadScenarios() {
+    const scenarioDescriptions = {
+        "POL123456": "😀 (Alice Smith)",
+        "POL111222": "🤔 (Robert Crook)"
+    };
+
     fetch('/api/scenarios')
         .then(res => res.json())
         .then(data => {
@@ -74,7 +82,8 @@ function loadScenarios() {
             data.forEach(s => {
                 const option = document.createElement('option');
                 option.value = s;
-                option.textContent = s;
+                const desc = scenarioDescriptions[s] ? `   ${scenarioDescriptions[s]}` : '';
+                option.textContent = `${s}${desc}`;
                 select.appendChild(option);
             });
         })
@@ -92,6 +101,20 @@ function selectScenario(scenario) {
     }
 }
 
+function updateClearFeedButton() {
+    const timelineContainer = document.getElementById('timeline-container');
+    const clearBtn = document.getElementById('clear-feed-btn');
+    const hasContent = timelineContainer.children.length > 1; // More than just the timeline-line
+    
+    if (hasContent) {
+        clearBtn.disabled = false;
+        clearBtn.style.opacity = '1';
+    } else {
+        clearBtn.disabled = true;
+        clearBtn.style.opacity = '0.5';
+    }
+}
+
 function clearFeed() {
     document.getElementById('timeline-container').innerHTML = '<div class="timeline-line" id="timeline-line" style="display: none;"></div>';
     showEmptyDetails();
@@ -100,10 +123,26 @@ function clearFeed() {
     currentAgentName = "ClaimsManager";
     currentAgentCardId = null;
     currentlyViewedAgent = null;
+    updateClearFeedButton();
 }
 
 function showEmptyDetails() {
-    document.getElementById('details-panel').innerHTML = '<div class="text-center text-muted mt-5 p-4"><i class="bi bi-info-circle display-4"></i><p class="mt-3">Select an agent or tool call to view details.</p></div>';
+    document.getElementById('details-panel').innerHTML = `
+        <div class="d-flex align-items-center justify-content-center text-center text-muted p-4" style="height: 100%;">
+            <div>
+                <i class="bi bi-card-text display-3 mb-3"></i>
+                <h5 class="mb-3">Agent & Tool Details</h5>
+                <p class="mb-2">This panel displays detailed information about agents and their tool calls.</p>
+                <p class="small mb-3">Click on any agent card or tool in the timeline to view:</p>
+                <ul class="list-unstyled small text-start" style="max-width: 400px; margin: 0 auto;">
+                    <li class="mb-2"><i class="bi bi-file-text text-primary me-2"></i>Agent instructions and purpose</li>
+                    <li class="mb-2"><i class="bi bi-tools text-success me-2"></i>Tool configurations and capabilities</li>
+                    <li class="mb-2"><i class="bi bi-chat-left-text text-info me-2"></i>Agent outputs and decisions</li>
+                    <li class="mb-2"><i class="bi bi-gear-wide-connected text-warning me-2"></i>Tool arguments and results</li>
+                </ul>
+            </div>
+        </div>
+    `;
 }
 
 function stopScenario() {
@@ -112,6 +151,13 @@ function stopScenario() {
     }
     
     const btn = document.getElementById('run-btn');
+    
+    // Hide tooltip before changing button state
+    const tooltip = bootstrap.Tooltip.getInstance(btn);
+    if (tooltip) {
+        tooltip.hide();
+    }
+    
     btn.disabled = false;
     btn.innerHTML = '<img src="/static/icons/play.png" alt="Play" style="width: 20px; height: 20px;">';
     btn.className = 'btn';
@@ -124,6 +170,13 @@ function runScenario() {
     if (!selectedScenario) return;
     
     const btn = document.getElementById('run-btn');
+    
+    // Hide tooltip before changing button state
+    const tooltip = bootstrap.Tooltip.getInstance(btn);
+    if (tooltip) {
+        tooltip.hide();
+    }
+    
     btn.disabled = true;
     btn.innerHTML = '<img src="/static/icons/close.png" alt="Stop" style="width: 20px; height: 20px;">';
     btn.className = 'btn';
@@ -133,12 +186,21 @@ function runScenario() {
     
     clearFeed();
     
+    // Remove placeholders
+    const timelinePlaceholder = document.getElementById('timeline-placeholder');
+    const detailsPlaceholder = document.getElementById('details-placeholder');
+    if (timelinePlaceholder) timelinePlaceholder.remove();
+    if (detailsPlaceholder) detailsPlaceholder.remove();
+    
     // Show timeline line
     const timelineLine = document.getElementById('timeline-line');
     if (timelineLine) timelineLine.style.display = 'block';
     
     // Add start pill
     addStartPill();
+    
+    // Enable clear feed button since we're adding content
+    updateClearFeedButton();
     
     // Don't create ClaimsManager card - we only show sub-agents
     currentAgentName = "ClaimsManager";
@@ -228,10 +290,11 @@ function handleEvent(data) {
             const rowId = addToolRow(currentAgentCardId, data.tool_name, data.args, null, null);
             const row = document.getElementById(rowId);
             if (row) {
-                // Store the full data
+                // Store the full data including structured args
                 row.dataset.toolData = JSON.stringify({
                     tool_name: data.tool_name,
                     arguments: data.args,
+                    args_dict: data.args_dict || null,
                     output: 'Tool executed successfully'
                 });
                 
@@ -245,21 +308,37 @@ function handleEvent(data) {
             }
         }
     } else if (data.type === 'tool_output') {
+        console.log('\n=== FRONTEND DEBUG TOOL OUTPUT ===');
+        console.log('Tool ID:', data.tool_id);
+        console.log('Tool Name:', data.tool_name);
+        console.log('Output length:', data.output?.length);
+        console.log('Output first 500 chars:', data.output?.substring(0, 500));
+        
         // Check if this was a handoff tool
         const toolInfo = toolCallMap[data.tool_id || data.tool_name];
+        console.log('Tool info from map:', toolInfo);
+        console.log('Tool to agent mapping:', toolToAgentMap);
+        
         if (toolInfo && toolToAgentMap[toolInfo.tool_name]) {
             // This is the output from a sub-agent handoff
             const agentName = toolToAgentMap[toolInfo.tool_name];
+            console.log('Matched to agent:', agentName);
+            console.log('Is agent tool: true');
             
-            // Store the agent's output
-            if (!agentOutputs[agentName]) {
-                agentOutputs[agentName] = [];
-            }
-            agentOutputs[agentName].push({
+            // Store the agent's output (this is the final output from the sub-agent)
+            console.log(`[DEBUG] Capturing tool_output for agent: ${agentName}`);
+            console.log(`[DEBUG] Output content length: ${data.output.length}`);
+            console.log(`[DEBUG] Output preview: ${data.output.substring(0, 100)}...`);
+            
+            // IMPORTANT: Clear any interim messages and only keep the final output
+            // The tool_output contains the complete final result from the sub-agent,
+            // so we don't need the incremental message events that were streamed during execution
+            agentOutputs[agentName] = [{
                 type: 'agent_output',
                 content: data.output,
                 timestamp: new Date().toLocaleTimeString()
-            });
+            }];
+            console.log(`[DEBUG] Replaced interim outputs with final output for ${agentName}`);
             
             // Mark the sub-agent as completed
             const status = document.querySelector(`#${currentAgentCardId} .agent-status`);
@@ -288,19 +367,30 @@ function handleEvent(data) {
             activeSubAgent = null;
             
             delete toolCallMap[data.tool_id || data.tool_name];
+        } else {
+            console.log('Not an agent tool - no mapping found');
         }
+        console.log('=== END FRONTEND DEBUG ===\n');
         // Sub-agent internal tool outputs are not exposed by the framework
     } else if (data.type === 'message') {
-        // Capture agent messages (reasoning, analysis, etc.)
-        if (currentAgentName && currentAgentName !== 'ClaimsManager') {
-            if (!agentOutputs[currentAgentName]) {
-                agentOutputs[currentAgentName] = [];
+        // Capture agent messages (interim thinking/reasoning during execution)
+        // NOTE: These interim messages are useful for real-time monitoring but will be
+        // replaced by the final tool_output when the sub-agent completes
+        // CRITICAL: Use data.agent_name from backend, not currentAgentName which may be stale
+        const messageAgentName = data.agent_name || currentAgentName;
+        if (messageAgentName && messageAgentName !== 'ClaimsManager') {
+            console.log(`[DEBUG] Capturing interim message for agent: ${messageAgentName} (data.agent_name=${data.agent_name}, currentAgentName=${currentAgentName})`);
+            console.log(`[DEBUG] Message content length: ${(data.content || data.message || '').length}`);
+            console.log(`[DEBUG] Message preview: ${(data.content || data.message || '').substring(0, 100)}...`);
+            if (!agentOutputs[messageAgentName]) {
+                agentOutputs[messageAgentName] = [];
             }
-            agentOutputs[currentAgentName].push({
+            agentOutputs[messageAgentName].push({
                 type: 'message',
                 content: data.content || data.message || '',
                 timestamp: new Date().toLocaleTimeString()
             });
+            console.log(`[DEBUG] Total interim messages for ${messageAgentName}: ${agentOutputs[messageAgentName].length}`);
         }
     } else if (data.type === 'final') {
         const btn = document.getElementById('run-btn');
@@ -374,8 +464,17 @@ function updateTimelineHeight() {
     const containerRect = container.getBoundingClientRect();
     const lastDotRect = lastDot.getBoundingClientRect();
     
-    // Calculate height to reach center of last dot
-    const newHeight = lastDotRect.top + lastDotRect.height / 2 - containerRect.top;
+    // Calculate height to reach center of last dot, then extend further
+    const centerOfLastDot = lastDotRect.top + lastDotRect.height / 2 - containerRect.top;
+    
+    // Check if the last dot is part of the End pill
+    const endPill = container.querySelector('.end-pill');
+    const isEndPill = endPill && endPill.contains(lastDot);
+    
+    // If it's the End pill, extend the line past it by 40px
+    const extension = isEndPill ? 40 : 0;
+    const newHeight = centerOfLastDot + extension;
+    
     timelineLine.style.height = newHeight + 'px';
 }
 
@@ -635,23 +734,39 @@ function showAgentDetails(agentName) {
 function showToolDetails(data) {
     const panel = document.getElementById('details-panel');
     
-    // Check for files
+    // Format arguments nicely
+    let argsHtml = '';
+    if (data.args_dict && Object.keys(data.args_dict).length > 0) {
+        // We have structured arguments with parameter names
+        argsHtml = '<div class="table-responsive"><table class="table table-sm table-bordered"><thead><tr><th style="width: 30%;">Parameter</th><th>Value</th></tr></thead><tbody>';
+        for (const [param, value] of Object.entries(data.args_dict)) {
+            const displayValue = typeof value === 'string' && value.length > 100 
+                ? value.substring(0, 100) + '...' 
+                : (typeof value === 'object' ? JSON.stringify(value, null, 2) : escapeHtml(String(value)));
+            argsHtml += `<tr><td><code>${escapeHtml(param)}</code></td><td><code>${displayValue}</code></td></tr>`;
+        }
+        argsHtml += '</tbody></table></div>';
+    } else if (data.arguments) {
+        // Fallback to original format
+        argsHtml = `<pre><code>${formatJSON(data.arguments)}</code></pre>`;
+    } else {
+        argsHtml = '<p class="text-muted">No arguments</p>';
+    }
+    
+    // Check for files in arguments
     let filePreviewHtml = '';
-    if (data.arguments) {
-        // Try to find file paths
-        // Regex for common extensions
-        const matches = data.arguments.match(/['"]([^'"]+\.(pdf|png|jpg|jpeg))['"]/i);
-        if (matches && matches[1]) {
-            const filePath = matches[1];
-            const relativePath = getRelativePath(filePath);
-            if (relativePath) {
-                filePreviewHtml = `
-                    <div class="mt-3">
-                        <h6>File Preview</h6>
-                        ${renderFilePreview(relativePath)}
-                    </div>
-                `;
-            }
+    const argsStr = JSON.stringify(data.args_dict || data.arguments || '');
+    const matches = argsStr.match(/['"]?([^'"]+\.(pdf|png|jpg|jpeg))['"]?/i);
+    if (matches && matches[1]) {
+        const filePath = matches[1];
+        const relativePath = getRelativePath(filePath);
+        if (relativePath) {
+            filePreviewHtml = `
+                <div class="mt-3">
+                    <h6>File Preview</h6>
+                    ${renderFilePreview(relativePath)}
+                </div>
+            `;
         }
     }
     
@@ -670,7 +785,7 @@ function showToolDetails(data) {
         <div class="tab-content" id="toolTabsContent">
             <div class="tab-pane fade show active" id="input-pane" role="tabpanel">
                 <h6>Arguments</h6>
-                <pre><code>${formatJSON(data.arguments)}</code></pre>
+                ${argsHtml}
                 ${filePreviewHtml}
             </div>
             <div class="tab-pane fade" id="output-pane" role="tabpanel">
@@ -811,9 +926,9 @@ function updateTheme(theme) {
     // Update title
     const brandElement = document.querySelector('.navbar-brand');
     if (theme.logo) {
-        brandElement.innerHTML = `<img src="${theme.logo}" alt="Logo" style="height: 30px; margin-right: 10px;"><span style="color: ${navbarTextColor}">${theme.title}</span>`;
+        brandElement.innerHTML = `<img src="${theme.logo}" alt="Logo" style="height: 40px; margin-right: 10px;"><span style="color: ${navbarTextColor}">${theme.title}</span>`;
     } else {
-        brandElement.innerHTML = `<i class="bi bi-robot me-2" style="color: ${navbarTextColor}"></i><span style="color: ${navbarTextColor}">${theme.title}</span>`;
+        brandElement.innerHTML = `<img src="/static/icons/agent.png" alt="Logo" style="height: 40px; margin-right: 10px;"><span style="color: ${navbarTextColor}">${theme.title}</span>`;
     }
     document.title = theme.title;
     

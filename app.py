@@ -266,6 +266,9 @@ def run_agent(policy_number):
                             }
                         
                         elif item.type == "tool_call_output_item":
+                            # Convert tool output to string
+                            # For agent tools, custom_output_extractor in insurance_claims_processing.py
+                            # ensures we get only the final output
                             output_text = str(item.output)
                             
                             # Get corresponding tool call

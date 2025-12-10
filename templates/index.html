@@ -15,17 +15,20 @@
         <header class="navbar navbar-expand-lg border-bottom" id="main-navbar">
             <div class="container-fluid">
                 <a class="navbar-brand" href="#">
-                    <i class="bi bi-robot me-2 text-primary"></i>Agentic Claims Processor
+                    <img src="/static/icons/agent.png" alt="Logo" style="height: 40px; margin-right: 10px;">Agentic Claims Processor
                 </a>
                 <div class="d-flex align-items-center gap-3 flex-grow-1 justify-content-end">
-                    <select id="scenario-select" class="form-select" style="width: 200px;">
+                    <select id="scenario-select" class="form-select" style="width: 300px;">
                         <option value="">Select Scenario...</option>
                     </select>
-                    <button id="run-btn" class="btn" disabled title="Run Scenario" style="background-color: #e5e7eb; border: 1px solid #d1d5db; padding: 6px 12px;">
-                        <img src="/static/icons/play.png" alt="Play" style="width: 20px; height: 20px;">
+                    <button id="run-btn" class="btn" disabled data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Run Scenario" style="background-color: #e5e7eb; border: 1px solid #d1d5db; padding: 8px 14px; display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 38px;">
+                        <img src="/static/icons/play.png" alt="Play" style="width: 20px; height: 20px; display: block;">
                     </button>
-                    <button id="settings-btn" class="btn" title="Settings" data-bs-toggle="modal" data-bs-target="#settingsModal" style="background-color: #e5e7eb; border: 1px solid #d1d5db; padding: 6px 12px;">
-                        <img src="/static/icons/settings.png" alt="Settings" style="width: 20px; height: 20px;">
+                    <button id="clear-feed-btn" class="btn" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Clear Feed" disabled style="background-color: #e5e7eb; border: 1px solid #d1d5db; padding: 8px 14px; opacity: 0.5; display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 38px;">
+                        <img src="/static/icons/trash.png" alt="Clear" style="width: 20px; height: 20px; display: block;">
+                    </button>
+                    <button id="settings-btn" class="btn" data-bs-toggle="modal" data-bs-target="#settingsModal" data-bs-custom-class="settings-tooltip" data-bs-title="Settings" style="background-color: #e5e7eb; border: 1px solid #d1d5db; padding: 8px 14px; display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 38px;">
+                        <img src="/static/icons/settings.png" alt="Settings" style="width: 20px; height: 20px; display: block;">
                     </button>
                 </div>
             </div>
@@ -34,16 +37,17 @@
         <div class="row flex-grow-1 overflow-hidden">
             <!-- Main Content: Timeline -->
             <div class="col-md-4 d-flex flex-column p-0 border-end bg-light">
-                <div class="p-3 ps-4 border-bottom bg-white d-flex justify-content-between align-items-center">
-                    <h6 class="text-uppercase text-muted mb-0">Agent Workflow</h6>
-                    <button class="btn btn-sm btn-outline-secondary" id="clear-feed-btn" title="Clear Feed">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                </div>
                 <div class="p-3 overflow-auto flex-grow-1 position-relative" id="timeline-scroll-container">
                     <div class="timeline-container" id="timeline-container">
                         <div class="timeline-line" id="timeline-line" style="display: none;"></div>
-                        <!-- Agent items will be added here -->
+                        <div class="d-flex align-items-center justify-content-center text-center text-muted p-4" id="timeline-placeholder" style="min-height: 400px;">
+                            <div>
+                                <i class="bi bi-diagram-3 display-3 mb-3"></i>
+                                <h5 class="mb-3">Agent Workflow Timeline</h5>
+                                <p class="mb-2">This panel shows the sequential flow of agents processing your claim.</p>
+                                <p class="small">Select a scenario and click <i class="bi bi-play-fill"></i> to begin.</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -51,9 +55,19 @@
             <!-- Right Panel: Details -->
             <div class="col-md-8 d-flex flex-column p-0 bg-white">
                 <div class="details-panel" id="details-panel">
-                    <div class="text-center text-muted mt-5 p-4">
-                        <i class="bi bi-info-circle display-4"></i>
-                        <p class="mt-3">Select an agent or tool call to view details.</p>
+                    <div class="d-flex align-items-center justify-content-center text-center text-muted p-4" id="details-placeholder" style="min-height: 400px;">
+                        <div>
+                            <i class="bi bi-card-text display-3 mb-3"></i>
+                            <h5 class="mb-3">Agent & Tool Details</h5>
+                            <p class="mb-2">This panel displays detailed information about agents and their tool calls.</p>
+                            <p class="small mb-3">Click on any agent card or tool in the timeline to view:</p>
+                            <ul class="list-unstyled small text-start" style="max-width: 400px; margin: 0 auto;">
+                                <li class="mb-2"><i class="bi bi-file-text text-primary me-2"></i>Agent instructions and purpose</li>
+                                <li class="mb-2"><i class="bi bi-tools text-success me-2"></i>Tool configurations and capabilities</li>
+                                <li class="mb-2"><i class="bi bi-chat-left-text text-info me-2"></i>Agent outputs and decisions</li>
+                                <li class="mb-2"><i class="bi bi-gear-wide-connected text-warning me-2"></i>Tool arguments and results</li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -136,8 +150,29 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"></script>
-    <script src="/static/js/app.js"></script>
+    <script>
+        // Initialize Bootstrap tooltips
+        document.addEventListener('DOMContentLoaded', function() {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl, {
+                    trigger: 'hover focus'
+                });
+            });
+            
+            // Initialize tooltip for settings button (which has modal toggle)
+            var settingsBtn = document.getElementById('settings-btn');
+            if (settingsBtn) {
+                new bootstrap.Tooltip(settingsBtn, {
+                    trigger: 'hover',
+                    placement: 'bottom'
+                });
+            }
+        });
+    </script>
+    <script src="/static/js/app.js?v=20251210-02"></script>
 </body>
 </html>

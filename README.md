@@ -1,143 +1,125 @@
-# 🤖 Multi-Agent Insurance Claims Processing System
+# 🤖 Agentic Claims Processor (Proof of Concept)  
+  
+## 🚀 Project Purpose  
+  
+This repository is a **proof of concept** for using multi-agent AI systems to automate complex, real-world processes, in this case, insurance claims processing. The goal is to **demonstrate** the orchestration, tool calling, and inter-agent communication possible with OpenAI’s Agent SDK on Azure.  
+  
+> **Note:** This is **not** intended as a production reference, but as a transparent, extensible sandbox for exploring agentic process automation.  
+  
+## 🛠️ Getting Started  
+  
+1. **Clone the repository**    
+    ```bash  
+    git clone https://github.com/tayganr/multi-agent-insurance-claim  
+    cd multi-agent-insurance-claim
+    ```  
+  
+2. **Create and activate a Python virtual environment**    
+    ```bash  
+    python -m venv .venv  
+    # On Windows:  
+    .venv\Scripts\activate  
+    # On Unix/Mac:  
+    source .venv/bin/activate  
+    ```  
+  
+3. **Install dependencies**    
+    ```bash  
+    pip install -r requirements.txt  
+    ```  
+  
+4. **Configure Azure credentials**    
+    - Create a `.env` file and fill in your Azure OpenAI and Document Intelligence keys and endpoints.  
+  
+    **Example `.env`:**  
+    ```env  
+    AZURE_OPENAI_API_KEY=...  
+    AZURE_OPENAI_API_VERSION=2024-05-01-preview  
+    AZURE_OPENAI_ENDPOINT=https://<your-openai-resource>.cognitiveservices.azure.com/  
+    AZURE_OPENAI_DEPLOYMENT=gpt-4.1-mini  
+  
+    AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT=https://<your-docintelligence-resource>.cognitiveservices.azure.com/  
+    AZURE_DOCUMENT_INTELLIGENCE_API_KEY=...  
+    ```
+  
+5. **Run the backend**    
+    ```bash  
+    python app.py  
+    ```  
+  
+6. **Open the web UI**    
+    - Go to [http://localhost:5000](http://localhost:5000) in your browser.  
+    - Select a scenario and run. Watch the agentic process in the timeline/details panels.  
+  
+## 🏗️ Backend Technical Architecture  
+  
+### 🧩 Key Technologies  
+  
+- **OpenAI Agent SDK**    
+  Enables the definition of agents (LLM-powered) with tools, and orchestrates their execution and communication.  
+- **Azure OpenAI Service**    
+  Provides GPT models via Azure endpoints.  
+- **Azure Document Intelligence**    
+  Extracts text from PDFs/images to markdown as a tool callable by agents.  
+- **Flask**    
+  Web API backend, serves SSE event streams for real-time UI updates.  
+- **Python async/await**    
+  All agent tools are async functions for concurrency and streaming.  
+  
+### 🤝 Agentic Orchestration  
+  
+- **Parent agent:** `ClaimsManager`  
+    - Receives a user request (`Process the insurance claim for policy number X`)  
+    - **Strictly enforces a sequential chain** of sub-agent calls (extract documents → verify identity → assess coverage → assess medical → final decision)  
+    - Each sub-agent is called as a tool, and receives only the `policy_number`.  
+  
+- **Sub-agents:** Each has its own markdown instructions and toolset.    
+  - 📄 **DocumentExtractor**: Extracts all documents to markdown via Azure Document Intelligence.  
+  - 🆔 **IDVerification**: Reads extracted files, compares IDs, and writes verification result.  
+  - 📑 **PolicyCoverage**: Reads policy document and assesses coverage.  
+  - 🩺 **MedicalAssessor**: Reviews medical documents for validity.  
+  - ✅ **ClaimsDecision**: Aggregates all assessments and renders a recommendation.  
+  
+#### 🛠️ Tool Implementation  
+  
+- Each tool is an `async def` Python function, decorated with `@function_tool`.  
+- Tools can access the filesystem, call Azure APIs, and write outputs.  
+- **All tool calls and outputs are streamed to the UI** for transparency.  
+  
+### ⚙️ Azure/OpenAI Configuration  
+  
+- LLM requests are made via the Azure OpenAI SDK.  
+- Document extraction uses Azure Document Intelligence’s `prebuilt-layout` model.  
 
-An AI-powered insurance claims processing system that uses multiple specialized agents to automate the end-to-end claims workflow. Built with OpenAI's multi-agent framework and Azure AI services.
-
-## 📋 Overview
-
-This application demonstrates a real-world multi-agent AI system that processes insurance claims through a structured workflow. A Claims Manager agent orchestrates five specialized sub-agents, each handling a specific aspect of the claims process:
-
-1. **DocumentExtractor** - Extracts content from PDFs and images using Azure Document Intelligence
-2. **IDVerification** - Verifies policy holder identity against ID documents
-3. **PolicyCoverage** - Assesses whether the claim is covered under the policy
-4. **MedicalAssessor** - Reviews medical documents for validity and appropriateness
-5. **ClaimsDecision** - Makes final approval/decline recommendations based on all assessments
-
-## ✨ Features
-
-- **Multi-Agent Orchestration**: Hierarchical agent structure with a parent Claims Manager coordinating specialized sub-agents
-- **Real-time Streaming UI**: Interactive web interface showing agent workflow and decision-making process
-- **Document Intelligence**: Automatic extraction of text from PDFs and images using Azure Document Intelligence
-- **Structured Workflow**: Enforced 5-step process ensuring consistent and thorough claim evaluation
-- **Rich Output**: Markdown-formatted results with emojis, tables, and clear decision indicators
-- **Customizable Theme**: Configure branding and color scheme through settings modal
-
-## 🏗️ Architecture
-
-```
-ClaimsManager (Parent Agent)
-    ├── DocumentExtractor → Extracts documents to markdown
-    ├── IDVerification → Verifies identity
-    ├── PolicyCoverage → Assesses coverage
-    ├── MedicalAssessor → Reviews medical validity
-    └── ClaimsDecision → Makes final recommendation
-```
-
-Each agent has:
-- **Specialized instructions** loaded from `instructions/*.md` files
-- **Custom tools** for their specific domain (file operations, API calls, etc.)
-- **Structured output format** using markdown with emojis and tables
-
-## 🚀 Getting Started
-
-### Prerequisites
-
-- Python 3.8+
-- Azure OpenAI account with GPT-4 deployment
-- Azure Document Intelligence service
-
-### Installation
-
-1. Clone the repository:
-```bash
-git clone https://github.com/tayganr/multi-agent-insurance-claim.git
-cd multi-agent-insurance-claim
-```
-
-2. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-3. Create a `.env` file with your Azure credentials:
-```env
-AZURE_OPENAI_API_KEY=your_api_key_here
-AZURE_OPENAI_API_VERSION=2024-10-21
-AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com
-AZURE_OPENAI_DEPLOYMENT=your_gpt4_deployment_name
-
-AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT=https://your-resource.cognitiveservices.azure.com
-AZURE_DOCUMENT_INTELLIGENCE_API_KEY=your_doc_intelligence_key
-```
-
-### Running the Application
-
-**Option 1: Web Application (Recommended)**
-```bash
-python app.py
-```
-Then open `http://localhost:5000` in your browser.
-
-**Option 2: Command Line**
-```bash
-python insurance_claims_processing.py
-```
-Edit `DEMO_POLICY_NUMBER` in the script to test different scenarios.
-
-**Option 3: Windows Batch File**
-```bash
-run_webapp.bat
-```
-
-## 🎯 How It Works
-
-### Workflow
-
-1. **Document Extraction**: The DocumentExtractor agent scans the `scenarios/<policy_number>` folder, extracts text from all PDFs and images using Azure Document Intelligence, and saves markdown files to `outputs/<policy_number>/documents_extracted/`
-
-2. **Identity Verification**: The IDVerification agent reads the extracted driver's license or ID, retrieves official policy holder details from the mock database, compares all fields (name, DOB, license number, address), and saves verification results
-
-3. **Coverage Assessment**: The PolicyCoverage agent reads policy rules, reviews claim documents (invoices, discharge summaries), checks against coverage rules and exclusions, and determines if the claim is covered
-
-4. **Medical Assessment**: The MedicalAssessor agent reviews medical documents, assesses medical necessity and appropriateness of treatment, checks for inconsistencies or red flags, and validates the medical claim
-
-5. **Final Decision**: The ClaimsDecision agent reads all previous assessments, weighs all factors (ID verification, coverage, medical validity), makes final recommendation (approve/decline/more info needed), and provides approval amount or decline reasons
-
-### Web Interface
-
-The Flask web application provides:
-- **Real-time streaming** of agent execution using Server-Sent Events (SSE)
-- **Visual timeline** showing active agents and tool calls
-- **Interactive details panel** displaying agent instructions, tool arguments, and outputs
-- **Scenario selector** to test different claim cases
-- **Customizable theme** with branding and color options
-
-## 🔧 Configuration
-
-### Adding New Scenarios
-
-1. Create a folder in `scenarios/` with the policy number as the name
-2. Add claim documents (PDFs, images): `drivers_license.png`, `hospital_invoice.pdf`, `discharge_summary.pdf`, etc.
-3. Add policy holder details to the mock database in `get_policy_holder_details()` function
-
-### Customizing Agents
-
-Each agent's behavior is controlled by:
-- **Instructions file** in `instructions/<agent_name>.md` - Defines role, workflow, and output format
-- **Tools** assigned in `create_agents()` function - Determines what actions the agent can take
-
-### Modifying the Workflow
-
-The workflow order is enforced in the ClaimsManager agent's instructions. To modify:
-1. Edit instructions in `create_agents()` function
-2. Add/remove tool assignments
-3. Update the workflow steps and ordering logic
-
-## 🛠️ Technologies Used
-
-- **OpenAI Multi-Agent Framework** (`openai-agents`) - Agent orchestration and tool calling
-- **Azure OpenAI** - GPT-4 language model
-- **Azure Document Intelligence** - PDF and image text extraction
-- **Flask** - Web application framework
-- **Bootstrap 5** - UI components and styling
-- **Marked.js** - Markdown rendering in browser
-
+## 🔄 Data Flow / Pipeline  
+  
+1. 🖱️ **User selects a scenario (policy number) and runs the workflow.**  
+2. 🧑‍💼 **ClaimsManager** agent receives the "process claim" request.  
+3. 🧩 Each sub-agent is called in turn, with the current state (mainly the `policy_number`).  
+4. 🛠️ **Tools** are invoked as needed (e.g., to extract documents, read files, write outputs).  
+5. 📡 **Agent decisions, tool calls, and outputs** are streamed to the UI for each step.  
+6. 🗂️ The UI timeline visualizes the agent workflow, tool invocations, arguments, and results.
+  
+## 🏭 Agentic Topologies: Pro Code vs. Low Code  
+  
+While this demo was built using "pro code" (Python, custom backend/frontend) to provide a highly tailored UI for educational purposes, the **parent-agent + sub-agent-as-tool topology** is not limited to code-first environments. Modern low-code platforms, such as **Copilot Studio**, enable you to compose similar agentic workflows, allowing a parent agent (or orchestration workflow) to call sub-agents as actions or tools.  
+  
+This code-first approach was chosen here to maximize transparency and to let the custom UI surface the reasoning, agent transitions, tool calls, and outputs in a way that helps users deeply understand each step of the agentic process.  
+  
+> **ℹ️ Production Note:**    
+> While the [OpenAI Agents SDK](https://openai.github.io/openai-agents-python/) was used for rapid prototyping and experimentation, for production scenarios in the Microsoft ecosystem, we recommend evaluating the [Microsoft Agent Framework](https://learn.microsoft.com/en-us/agent-framework/overview/agent-framework-overview), which is designed for robust, enterprise-scale agentic automation.  
+  
+## 🤔 Why Multi-Agent?  
+  
+This demo shows how **specialized agents** with access to different tools and instructions can be **chained together** to automate a complex, multi-step process. Each agent is:  
+- 🔍 Auditable (you can see its inputs, outputs, and tools)  
+- 🧱 Modular (can swap instructions/tools/logic)  
+- ⚙️ Composable (parent agent orchestrates the process)  
+  
+**The result:** complex business workflows can be broken down into manageable, inspectable, and extensible AI-driven steps.
+  
+## 🧪 Further Exploration  
+  
+- ✏️ Try editing agent instructions to change reasoning.  
+- 🛠️ Add new tools or agents for different process steps.  
+- 🤝 Integrate additional Azure AI services as tools.

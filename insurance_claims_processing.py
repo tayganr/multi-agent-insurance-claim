@@ -80,7 +80,7 @@ tool_call_queue: ContextVar[asyncio.Queue] = ContextVar('tool_call_queue', defau
 
 async def print_tool_call(*args):
     """Record tool call for streaming to UI."""
-    # Get the calling function's name
+    # Get the calling function's name and code object
     frame = inspect.currentframe()
     caller_frame = frame.f_back
     tool_name = caller_frame.f_code.co_name if caller_frame else "unknown"
@@ -90,10 +90,31 @@ async def print_tool_call(*args):
     # Also send to queue if available
     queue = tool_call_queue.get(None)
     if queue:
+        # Try to get parameter names from the function's code object directly
+        args_dict = {}
+        try:
+            # Get parameter names directly from the code object
+            code = caller_frame.f_code
+            param_count = code.co_argcount
+            param_names = code.co_varnames[:param_count]
+            
+            # Map args to parameter names
+            for i, arg in enumerate(args):
+                if i < len(param_names):
+                    args_dict[param_names[i]] = arg
+                else:
+                    args_dict[f'arg{i}'] = arg
+                    
+        except Exception as e:
+            # Fallback to positional args
+            print(f"  ⚠️ Could not introspect {tool_name}: {e}")
+            args_dict = {f'arg{i}': arg for i, arg in enumerate(args)}
+        
         await queue.put({
             'type': 'internal_tool_call',
             'tool_name': tool_name,
-            'args': str(args)
+            'args': str(args),  # Keep for backward compatibility
+            'args_dict': args_dict  # Structured args with parameter names
         })
 
 
@@ -479,6 +500,14 @@ async def create_agents(model_config: OpenAIChatCompletionsModel):
         tools=[read_all_assessment_results, save_final_decision],
     )
     
+    # Custom output extractor for agent tools
+    # This ensures we only return the final output, not interim messages
+    async def extract_final_output(run_result) -> str:
+        """Extract only the final output from an agent run, avoiding interim messages."""
+        # The final_output already contains the last message content
+        # This is cleaner than str(run_result) which includes all intermediate messages
+        return str(run_result.final_output)
+    
     # Parent Agent: Claims Manager
     claims_manager_agent = Agent(
         name="ClaimsManager",
@@ -503,22 +532,27 @@ async def create_agents(model_config: OpenAIChatCompletionsModel):
             document_extractor_agent.as_tool(
                 tool_name="extract_documents",
                 tool_description="📄 Extract and convert all claim documents (PDFs/images) to markdown format",
+                custom_output_extractor=extract_final_output,
             ),
             id_verification_agent.as_tool(
                 tool_name="verify_identity",
                 tool_description="🪪 Verify the policy holder's identity against provided ID documents",
+                custom_output_extractor=extract_final_output,
             ),
             policy_coverage_agent.as_tool(
                 tool_name="assess_coverage",
                 tool_description="📋 Assess whether the claim is covered under the policy",
+                custom_output_extractor=extract_final_output,
             ),
             medical_assessor_agent.as_tool(
                 tool_name="assess_medical",
                 tool_description="🏥 Review medical documents and assess medical validity of the claim",
+                custom_output_extractor=extract_final_output,
             ),
             claims_decision_agent.as_tool(
                 tool_name="make_decision",
                 tool_description="⚖️ Make the final claims decision based on all assessments",
+                custom_output_extractor=extract_final_output,
             ),
         ],
     )
@@ -561,9 +595,11 @@ async def main():
         # Streaming run
         streaming_result = Runner.run_streamed(claims_manager, user_request)
         
-        # Track tool calls
+        # Track tool calls and agent outputs
         tool_call_queue: list[str] = []
+        agent_messages: list[tuple[str, str]] = []  # (agent_name, message_text)
         step_counter = 1
+        current_agent_name = claims_manager.name
         
         async for event in streaming_result.stream_events():
             if event.type == "raw_response_event":
@@ -571,7 +607,8 @@ async def main():
                 continue
             
             if event.type == "agent_updated_stream_event":
-                print_heading(f"🔄 Active Agent: {event.new_agent.name}")
+                current_agent_name = event.new_agent.name
+                print_heading(f"🔄 Active Agent: {current_agent_name}")
                 continue
             
             if event.type == "run_item_stream_event":
@@ -623,8 +660,11 @@ async def main():
                 # 3) Agent sends a normal message
                 elif item.type == "message_output_item":
                     text = ItemHelpers.text_message_output(item)
-                    print_heading(f"💬 Step {step_counter}: {claims_manager.name} responds")
+                    print_heading(f"💬 Step {step_counter}: {current_agent_name} responds")
                     step_counter += 1
+                    
+                    # Store full message for later saving
+                    agent_messages.append((current_agent_name, text))
                     
                     text = maybe_truncate(text, max_lines=40)
                     print(indent(text, "  "))
@@ -633,6 +673,25 @@ async def main():
         final = str(streaming_result.final_output)
         final = maybe_truncate(final, max_lines=60)
         print(final)
+        
+        # Save the final summary
+        write_output_file(
+            DEMO_POLICY_NUMBER,
+            "agent_summaries",
+            "final_summary.md",
+            final
+        )
+        
+        # Save individual agent messages
+        for agent_name, message_text in agent_messages:
+            # Create a sanitized filename
+            filename = f"{agent_name.lower().replace(' ', '_')}_output.md"
+            write_output_file(
+                DEMO_POLICY_NUMBER,
+                "agent_summaries",
+                filename,
+                f"# {agent_name} Output\n\n{message_text}"
+            )
         
         print_heading("📁 Output Location")
         print(f"All processing results saved to: {os.path.join(OUTPUTS_FOLDER, DEMO_POLICY_NUMBER)}")

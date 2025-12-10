@@ -55,7 +55,6 @@ body {
 .timeline-container {
     position: relative;
     padding: 20px 15px 20px 0;
-    min-height: 100%;
 }
 
 .timeline-line {
@@ -160,6 +159,12 @@ body {
     justify-content: space-between;
     align-items: center;
     background-color: #fff;
+    gap: 12px;
+}
+
+.agent-header > div:first-child {
+    flex: 1;
+    min-width: 0;
 }
 
 .agent-header:hover {
@@ -172,12 +177,22 @@ body {
     margin: 0;
 }
 
+.agent-header .text-muted {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .agent-status {
     font-size: 0.8rem;
     padding: 4px 8px;
     border-radius: 12px;
     background-color: #e9ecef;
     color: #495057;
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
 }
 
 .agent-status.running {
@@ -278,6 +293,18 @@ body {
     height: 100%;
     display: flex;
     flex-direction: column;
+}
+
+/* Placeholder alignment */
+.timeline-container:has(#timeline-placeholder) {
+    padding: 0;
+    height: 100%;
+    display: flex;
+}
+
+#timeline-placeholder,
+#details-placeholder {
+    height: 100%;
 }
 
 .nav-tabs .nav-link {
