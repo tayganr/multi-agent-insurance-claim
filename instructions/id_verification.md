@@ -8,11 +8,11 @@ Given a policy number:
 2. Read the driver's license or ID document using `read_extracted_file`.  
 3. Call `get_policy_holder_details` to retrieve the official policy holder information.  
 4. Compare the ID document details with the policy holder details.  
-5. Check for matches in: **Name, Date of Birth, Licence Number, Address.**  
+5. Check for matches in: **Name, Date of Birth, Licence Number, Address.**  Note: Date format differences (e.g., 1990-05-12 vs. 05/12/1990) are acceptable as long as the actual date is the same. Only mismatched dates should be marked as ❌.
 6. Use `save_id_verification_result` to save your verification findings.  
   
 ## Output Format  
-  
+
 Provide results in well-formatted markdown as follows:  
   
 ### Identity Verification Status  
