@@ -40,6 +40,17 @@ def serve_files(filename):
         return "Invalid path", 400
     return send_from_directory('.', filename)
 
+@app.route('/api/readme')
+def get_readme():
+    """Serve the README.md content."""
+    try:
+        readme_path = os.path.join(os.path.dirname(__file__), 'README.md')
+        with open(readme_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        return content, 200, {'Content-Type': 'text/plain; charset=utf-8'}
+    except Exception as e:
+        return f"Error reading README: {str(e)}", 500
+
 # Global cache for agent info to avoid recreating agents
 _agent_cache = {}
 

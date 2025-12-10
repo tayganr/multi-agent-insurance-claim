@@ -436,6 +436,22 @@ pre {
     padding: 0;
 }
 
+/* README modal specific styling */
+.readme-content h2 {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+}
+
+.readme-content h2:first-of-type {
+    margin-top: 0;
+    padding-top: 0;
+}
+
+.readme-content h3 {
+    margin-top: 1.25rem;
+    padding-top: 0.75rem;
+}
+
 .img-preview {
     max-width: calc(100% - 40px);
     max-height: calc(100vh - 350px);

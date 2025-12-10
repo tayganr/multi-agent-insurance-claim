@@ -55,11 +55,11 @@ This repository is a **proof of concept** for using multi-agent AI systems to au
   
 ### 🧩 Key Technologies  
   
-- **OpenAI Agent SDK**    
+- **[OpenAI Agent SDK](https://openai.github.io/openai-agents-python/)**    
   Enables the definition of agents (LLM-powered) with tools, and orchestrates their execution and communication.  
-- **Azure OpenAI Service**    
+- **[Azure OpenAI Service](https://azure.microsoft.com/en-au/products/ai-foundry/models/openai/)**    
   Provides GPT models via Azure endpoints.  
-- **Azure Document Intelligence**    
+- **[Azure Document Intelligence](https://azure.microsoft.com/en-us/products/ai-foundry/tools/document-intelligence)**    
   Extracts text from PDFs/images to markdown as a tool callable by agents.  
 - **Flask**    
   Web API backend, serves SSE event streams for real-time UI updates.  
@@ -117,9 +117,3 @@ This demo shows how **specialized agents** with access to different tools and in
 - ⚙️ Composable (parent agent orchestrates the process)  
   
 **The result:** complex business workflows can be broken down into manageable, inspectable, and extensible AI-driven steps.
-  
-## 🧪 Further Exploration  
-  
-- ✏️ Try editing agent instructions to change reasoning.  
-- 🛠️ Add new tools or agents for different process steps.  
-- 🤝 Integrate additional Azure AI services as tools.
