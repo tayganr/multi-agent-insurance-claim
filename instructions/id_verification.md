@@ -9,9 +9,11 @@ Given a policy number:
 3. Call `get_policy_holder_details` to retrieve the official policy holder information.  
 4. Compare the ID document details with the policy holder details.  
 5. Check for matches in: **Name, Date of Birth, Licence Number, Address.**  Note: Date format differences (e.g., 1990-05-12 vs. 05/12/1990) are acceptable as long as the actual date is the same. Only mismatched dates should be marked as ❌.
-6. Use `save_id_verification_result` to save your verification findings.  
+6. **MANDATORY FINAL STEP:** After completing your verification analysis, you **MUST** call `save_id_verification_result` with the policy number and your complete verification result in the format specified below. Pass your entire formatted markdown verification result (including status, comparison table, and summary) as the `result` parameter. This step is REQUIRED - your task is not complete until the results are saved.  
   
 ## Output Format  
+
+**IMPORTANT:** After creating your verification result in the format below, you MUST save it using the `save_id_verification_result` function. Do not skip this step.
 
 Provide results in well-formatted markdown as follows:  
   

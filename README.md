@@ -29,17 +29,17 @@ This repository is a **proof of concept** for using multi-agent AI systems to au
     ```  
   
 4. **Configure Azure credentials**    
-    - Create a `.env` file and fill in your Azure OpenAI and Document Intelligence keys and endpoints.  
+    - Sign in with Azure CLI: `az login`  
+    - Ensure your account has the **Cognitive Services OpenAI User** role on your Azure OpenAI resource and the **Cognitive Services User** role on your Document Intelligence resource.  
+    - Create a `.env` file with your endpoints (no API keys needed — authentication uses `DefaultAzureCredential`).  
   
     **Example `.env`:**  
     ```env  
-    AZURE_OPENAI_API_KEY=...  
     AZURE_OPENAI_API_VERSION=2024-05-01-preview  
     AZURE_OPENAI_ENDPOINT=https://<your-openai-resource>.cognitiveservices.azure.com/  
     AZURE_OPENAI_DEPLOYMENT=gpt-4.1-mini  
   
     AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT=https://<your-docintelligence-resource>.cognitiveservices.azure.com/  
-    AZURE_DOCUMENT_INTELLIGENCE_API_KEY=...  
     ```
   
 5. **Run the backend**    

@@ -8,10 +8,10 @@ from typing import Any
 from contextvars import ContextVar
 
 from openai import AsyncAzureOpenAI, OpenAIError
+from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from dotenv import load_dotenv
 from azure.ai.documentintelligence import DocumentIntelligenceClient
 from azure.ai.documentintelligence.models import DocumentContentFormat
-from azure.core.credentials import AzureKeyCredential
 
 from agents import (
     Agent,
@@ -45,12 +45,12 @@ OUTPUTS_FOLDER = "outputs"  # Where all processing outputs are stored
 
 # Azure Document Intelligence credentials
 AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT = os.getenv("AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT")
-AZURE_DOCUMENT_INTELLIGENCE_API_KEY = os.getenv("AZURE_DOCUMENT_INTELLIGENCE_API_KEY")
 
-# Initialize the Azure Document Intelligence client
+# Initialize the Azure Document Intelligence client using DefaultAzureCredential
+_azure_credential = DefaultAzureCredential()
 _document_client = DocumentIntelligenceClient(
     endpoint=AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT,
-    credential=AzureKeyCredential(AZURE_DOCUMENT_INTELLIGENCE_API_KEY),
+    credential=_azure_credential,
 )
 
 # ============================================================================
@@ -256,7 +256,7 @@ async def get_policy_holder_details(policy_number: str) -> dict:
     mock_db = {
         "POL123456": {
             "name": "Alice Smith",
-            "dob": "1990-01-02",
+            "dob": "1990-05-13",
             "gender": "Female",
             "address": "123 High Street, London",
             "licence_number": "SMITH123456A98BC"
@@ -570,9 +570,11 @@ async def main():
         print_heading("🏥 Insurance Claims Processing System")
         print(f"Processing claim for policy number: {DEMO_POLICY_NUMBER}")
         
-        # Azure OpenAI client
+        # Azure OpenAI client with DefaultAzureCredential (auto token refresh)
+        azure_credential = DefaultAzureCredential()
+        token_provider = get_bearer_token_provider(azure_credential, "https://cognitiveservices.azure.com/.default")
         client = AsyncAzureOpenAI(
-            api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+            azure_ad_token_provider=token_provider,
             api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
             azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
         )

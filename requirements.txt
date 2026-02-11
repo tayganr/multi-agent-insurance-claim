@@ -2,4 +2,5 @@ openai
 openai-agents
 python-dotenv
 azure-ai-documentintelligence
+azure-identity
 flask

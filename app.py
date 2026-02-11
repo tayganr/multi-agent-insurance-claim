@@ -7,6 +7,7 @@ from pathlib import Path
 from flask import Flask, render_template, send_from_directory, Response, request, jsonify, stream_with_context
 from dotenv import load_dotenv
 from openai import AsyncAzureOpenAI
+from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 
 # Import from the existing script
 import sys
@@ -16,6 +17,10 @@ import insurance_claims_processing
 from insurance_claims_processing import create_agents, OpenAIChatCompletionsModel, Runner, ItemHelpers
 
 load_dotenv()
+
+# Set up token provider using DefaultAzureCredential (no manual token needed)
+azure_credential = DefaultAzureCredential()
+token_provider = get_bearer_token_provider(azure_credential, "https://cognitiveservices.azure.com/.default")
 
 app = Flask(__name__)
 
@@ -60,7 +65,7 @@ async def _get_all_agents():
         return _agent_cache
     
     client = AsyncAzureOpenAI(
-        api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+        azure_ad_token_provider=token_provider,
         api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
         azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
     )
@@ -201,7 +206,7 @@ def run_agent(policy_number):
                 tool_call_queue.set(queue)
                 
                 client = AsyncAzureOpenAI(
-                    api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+                    azure_ad_token_provider=token_provider,
                     api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
                     azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
                 )
